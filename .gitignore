@@ -1,0 +1,8 @@
+data/raw/*.csv
+data/processed/
+models/
+__pycache__/
+.ipynb_checkpoints/
+.venv/
+.DS_Store
+# reports/ and dashboard/ ARE committed: they hold the numbers and figures the README cites
