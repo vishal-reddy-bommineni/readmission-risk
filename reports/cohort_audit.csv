@@ -1,0 +1,6 @@
+step,n
+raw encounters,101766
+after removing expired/hospice,99343
+final cohort,99340
+unique patients in cohort,69987
+readmitted <30d in cohort,11314
