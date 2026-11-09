@@ -1,14 +1,16 @@
 # 30-Day Hospital Readmission Risk
 
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://vishal-readmission-risk.streamlit.app)
+
 Which diabetic inpatients will be back in hospital within 30 days, and who should a care team
 with limited time call first? Built on 101,766 real (de-identified) encounters from 130 US
 hospitals, with SQL feature engineering, a patient-grouped evaluation, calibrated risk scores,
 SHAP explanations, a fairness audit and a care-team dashboard.
 
 > **Headline.** If a care team calls the riskiest 10% of discharges (1,482 calls on the
-> 14,815-encounter test set), the model's list reaches **435 of 1,644 readmissions (26.5%)**,
-> 2.65x the rate of calling at random and 64 more than a 3-feature baseline reaches with the same
-> number of calls. Test AUROC **0.689** (95% CI 0.672-0.704) vs **0.619** for the baseline, on
+> 14,815-encounter test set), the model's list reaches **433 of 1,644 readmissions (26.3%)**,
+> 2.63x the rate of calling at random and 62 more than a 3-feature baseline reaches with the same
+> number of calls. Test AUROC **0.690** (95% CI 0.674-0.706) vs **0.619** for the baseline, on
 > patients the model never saw in training.
 
 ![Care-team dashboard](reports/figures/app_dashboard.png)
@@ -67,10 +69,10 @@ What the data showed before modeling (`reports/eda.md`):
 | Prevalence only | 0.500 | 0.111 | 0.0987 | - | - | - |
 | LogReg, 3 utilization counts | 0.619 (0.602-0.636) | 0.195 (0.171-0.222) | 0.0954 | 25.0% | 22.6% | 2.26x |
 | LogReg, all features | 0.680 (0.664-0.696) | 0.224 (0.200-0.250) | 0.0939 | 27.1% | 24.4% | 2.44x |
-| **XGBoost + Platt calibration (final)** | **0.689 (0.672-0.704)** | **0.251 (0.224-0.281)** | **0.0926** | **29.4%** | **26.5%** | **2.65x** |
+| **XGBoost + Platt calibration (final)** | **0.690 (0.674-0.706)** | **0.251 (0.224-0.279)** | **0.0925** | **29.2%** | **26.3%** | **2.63x** |
 
 CIs: 1,000 bootstrap resamples **of patients** (one patient's encounters are correlated).
-The final model was chosen on validation AUROC (XGBoost 0.681 vs LogReg 0.663); the test set
+The final model was chosen on validation AUROC (XGBoost 0.682 vs LogReg 0.663); the test set
 was used once, for this table. Full output: `reports/RESULTS.md`.
 
 **Reading this honestly.** An AUROC near 0.69 is typical for 30-day readmission from administrative
@@ -82,18 +84,18 @@ gain shows up where it is used, at the top of the list.
 
 | Tier | Test encounters | Predicted risk | Observed 30-day readmission |
 |---|---|---|---|
-| High (top 10%) | 1,435 | 28.6% | 30.0% |
-| Medium | 5,986 | 13.4% | 12.8% |
-| Low | 7,394 | 6.3% | 6.1% |
+| High (top 10%) | 1,463 | 28.7% | 29.3% |
+| Medium | 5,941 | 13.4% | 12.9% |
+| Low | 7,411 | 6.3% | 6.1% |
 
 ![ROC and PR curves](reports/figures/roc_pr.png)
 
 ### Calibration
 A score a nurse reads as "30%" should mean about 30%. Platt scaling and isotonic regression were
 compared by 2-fold patient-grouped cross-fitting **inside the validation set**; Platt won on log
-loss (0.3300 vs 0.3317). Platt is monotonic, so it keeps the model's ranking; isotonic had created
-tied scores that cost 0.012 PR-AUC in a first run. Predicted and observed rates agree within about
-1.5 points in every tier.
+loss (0.3300 vs 0.3329). Platt is monotonic, so it keeps the model's ranking; isotonic had created
+tied scores that cost 0.012 PR-AUC in an early run. Predicted and observed rates agree within
+1 point in every tier.
 
 ![Calibration](reports/figures/calibration.png)
 
@@ -114,13 +116,13 @@ Race and gender are **not** model inputs; they are used only to check how the mo
 
 | Group | n | Observed | Predicted | AUROC | Recall at top-10% threshold |
 |---|---|---|---|---|---|
-| Caucasian | 11,093 | 11.5% | 11.4% | 0.688 | 26.9% |
-| African American | 2,744 | 10.1% | 11.5% | 0.687 | 23.0% |
-| Female | 8,129 | 11.3% | 11.6% | 0.691 | 27.3% |
-| Male | 6,686 | 10.9% | 11.0% | 0.686 | 24.7% |
-| Age 50-60 | 2,595 | 11.2% | 10.1% | 0.751 | 33.5% |
-| Age 80-90 | 2,466 | 11.8% | 12.8% | 0.619 | 20.0% |
-| Age 90-100 | 407 | 12.8% | 12.5% | 0.525 | 19.2% |
+| Caucasian | 11,093 | 11.5% | 11.4% | 0.691 | 26.9% |
+| African American | 2,744 | 10.1% | 11.5% | 0.684 | 23.0% |
+| Female | 8,129 | 11.3% | 11.6% | 0.692 | 26.9% |
+| Male | 6,686 | 10.9% | 11.0% | 0.688 | 24.9% |
+| Age 50-60 | 2,595 | 11.2% | 10.2% | 0.750 | 33.5% |
+| Age 80-90 | 2,466 | 11.8% | 12.9% | 0.619 | 21.4% |
+| Age 90-100 | 407 | 12.8% | 12.6% | 0.519 | 17.3% |
 
 - Ranking quality is similar across race and gender, but **African American patients are
   over-predicted by 1.4 points yet have lower recall (23.0% vs 26.9%)**: fewer of their actual
@@ -137,8 +139,8 @@ flag (3+ prior stays), an emergency-repeat flag, and a grouped discharge destina
 them with 5-fold patient-grouped cross-validation on train+val (test untouched).
 - The four extra features changed AUROC by **-0.0001**: the trees can already build them from
   existing columns. Not kept.
-- Replacing the 26 raw discharge codes with 6 groups made things **worse in 5 of 5 folds**
-  (AUROC -0.005, PR-AUC -0.010). My grouping put rehab (27.7% readmitted) and psychiatric
+- Replacing the 26 raw discharge codes with 6 groups made things **worse**: AUROC -0.005 (lower in
+  4 of 5 folds) and PR-AUC -0.010 (lower in all 5). My grouping put rehab (27.7% readmitted) and psychiatric
   transfers (36.7%) in the same bucket as nursing facilities (14.7%), erasing real signal.
 
 ## What broke
@@ -146,13 +148,13 @@ them with 5-fold patient-grouped cross-validation on train+val (test untouched).
    `diabetesMed` is only Yes/No, so DuckDB's type inference read them as BOOLEAN, which broke the
    medication-count feature. Fixed by declaring explicit types for every text column at load.
 2. **The leakage check didn't show what I expected.** I expected a random encounter-level split to
-   inflate AUROC. It didn't (0.688 vs 0.689 grouped). Splitting that naive test set showed why the
+   inflate AUROC. It didn't (0.688 vs 0.690 grouped). Splitting that naive test set showed why the
    grouped split still matters:
 
    | Naive-split test encounters | n | 30-day rate | AUROC |
    |---|---|---|---|
    | Patient also in training | 6,297 | 20.3% | 0.575 |
-   | Patient never seen | 8,537 | 4.6% | 0.729 |
+   | Patient never seen | 8,537 | 4.6% | 0.731 |
 
    Patients with several encounters are readmitted **4x as often**, because a readmission *is* a
    second encounter. So "how many times does this patient appear in the file" is nearly the label.

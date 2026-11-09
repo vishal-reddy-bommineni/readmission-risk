@@ -1,8 +1,9 @@
 data/raw/*.csv
 data/processed/
-models/
+# models/ is committed so the deployed Streamlit app can load the trained model
 __pycache__/
 .ipynb_checkpoints/
 .venv/
 .DS_Store
+.vscode/
 # reports/ and dashboard/ ARE committed: they hold the numbers and figures the README cites
